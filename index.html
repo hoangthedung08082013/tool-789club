@@ -1,0 +1,250 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TX 789club – ANHLADBE</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+  color:#fff;
+  font-family:Arial;
+  padding:10px
+}
+
+/* ===== CARD ===== */
+.vip-card{
+  max-width:420px;
+  margin:auto;
+  background:linear-gradient(145deg,#0f0f0f,#1b1b1b);
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 0 30px rgba(255,215,0,.25);
+  border:1px solid rgba(255,215,0,.4);
+  position:relative;
+  overflow:hidden
+}
+
+.vip-title{
+  text-align:center;
+  font-size:20px;
+  font-weight:bold;
+  color:#ffd700
+}
+.vip-sub{
+  text-align:center;
+  font-size:12px;
+  color:#aaa;
+  margin-bottom:12px
+}
+
+.box{
+  background:#111;
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:10px;
+  border:1px solid #333;
+  text-align:center;
+  font-size:14px
+}
+
+.tai{color:#4dff88;font-weight:bold;font-size:26px}
+.xiu{color:#ff4d4d;font-weight:bold;font-size:26px}
+
+.footer{
+  text-align:center;
+  font-size:11px;
+  color:#777;
+  margin-top:8px
+}
+
+/* ===== LOCK ===== */
+.lock{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.88);
+  backdrop-filter:blur(6px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:99
+}
+.lock-box{
+  width:90%;
+  background:#111;
+  border-radius:14px;
+  padding:18px;
+  text-align:center;
+  border:1px solid #444
+}
+.lock-title{
+  color:#ffd700;
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:6px
+}
+.lock-desc{
+  font-size:12px;
+  color:#aaa;
+  margin-bottom:10px
+}
+.lock-input{
+  width:100%;
+  padding:12px;
+  border-radius:8px;
+  border:none;
+  outline:none;
+  margin-bottom:8px
+}
+.lock-btn{
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  background:#ffd700;
+  color:#000;
+  font-weight:bold;
+  cursor:pointer
+}
+.lock-status{
+  margin-top:8px;
+  font-size:12px
+}
+.fail{color:#ff4d4d}
+.ok{color:#4dff88}
+</style>
+</head>
+
+<body>
+
+<div class="vip-card">
+
+  <!-- LOCK -->
+  <div class="lock" id="lock">
+    <div class="lock-box">
+      <div class="lock-title">🔒 TOOL BỊ KHÓA</div>
+      <div class="lock-desc">Nhập key do admin cấp để sử dụng</div>
+      <input id="keyInput" class="lock-input" placeholder="Nhập key">
+      <button class="lock-btn" onclick="unlock()">MỞ KHÓA</button>
+      <div id="keyStatus" class="lock-status"></div>
+    </div>
+  </div>
+
+  <!-- TOOL -->
+  <div class="vip-title">🎲 TX 789CLUB</div>
+  <div class="vip-sub">Thuật toán VIP • Chống soi • Auto phiên</div>
+
+  <div class="box" id="phien">Phiên dự đoán: --</div>
+  <div class="box" id="duDoan">Đang chờ dữ liệu…</div>
+  <div class="box" id="tyLe"></div>
+
+  <div class="footer">© tele : cskhdbezz</div>
+</div>
+
+<script>
+/* ===== KEY ===== */
+const VALID_KEY = "VIP789";
+const KEY_STORE = "tx_unlocked";
+
+if(localStorage.getItem(KEY_STORE)==="1"){
+  document.getElementById("lock").style.display="none";
+}
+
+/* ===== API ===== */
+const API = "https://api789.hacksieucap.pro/789dudoan";
+let lastPhienAPI = null;
+
+/* ===== MEMORY ===== */
+let history = JSON.parse(localStorage.getItem("tx_history")||"[]");
+
+function saveHistory(v){
+  history.push(v);
+  if(history.length>20) history.shift();
+  localStorage.setItem("tx_history",JSON.stringify(history));
+}
+
+function streak(){
+  if(history.length<2) return 1;
+  let last = history[history.length-1], c=1;
+  for(let i=history.length-2;i>=0;i--){
+    if(history[i]===last) c++;
+    else break;
+  }
+  return c;
+}
+
+/* ===== SMART ALGO ===== */
+function smartTX(phien){
+  let s = streak();
+  let last = history[history.length-1];
+
+  if(s>=3){
+    return last==="TAI"?"XIU":"TAI";
+  }
+
+  let seed = (phien*9301+49297)%233280;
+  return seed%2===0?"TAI":"XIU";
+}
+
+function smartPercent(s){
+  if(s>=4) return rand(45,55);
+  if(s===3) return rand(50,60);
+  if(s===2) return rand(60,68);
+  return rand(68,75);
+}
+
+function rand(a,b){
+  return Math.floor(Math.random()*(b-a+1))+a;
+}
+
+/* ===== MAIN LOOP ===== */
+async function fetchAPI(){
+  if(localStorage.getItem(KEY_STORE)!=="1") return;
+
+  try{
+    const res = await fetch(API);
+    const data = await res.json();
+    if(!data.Phien) return;
+
+    if(data.Phien!==lastPhienAPI){
+      lastPhienAPI = data.Phien;
+
+      let p = data.Phien+1;
+      let tx = smartTX(p);
+      saveHistory(tx);
+
+      let s = streak();
+      let tl = smartPercent(s);
+
+      document.getElementById("phien").innerText="Phiên dự đoán: "+p;
+      document.getElementById("duDoan").innerHTML=
+        "Dự đoán: <span class='"+(tx==="TAI"?"tai":"xiu")+"'>"+tx+"</span>";
+      document.getElementById("tyLe").innerText=
+        "Độ tin cậy: "+tl+"%";
+    }
+  }catch(e){
+    document.getElementById("duDoan").innerText="❌ Lỗi API";
+  }
+}
+
+setInterval(fetchAPI,1500);
+
+/* ===== UNLOCK ===== */
+function unlock(){
+  let v = document.getElementById("keyInput").value.trim();
+  let st = document.getElementById("keyStatus");
+  if(v===VALID_KEY){
+    localStorage.setItem(KEY_STORE,"1");
+    document.getElementById("lock").style.display="none";
+  }else{
+    st.innerHTML="❌ Key sai";
+    st.className="lock-status fail";
+  }
+}
+</script>
+
+</body>
+</html>
